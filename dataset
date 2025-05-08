@@ -1,0 +1,84 @@
+# Import necessary libraries
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+from sklearn.model_selection import train_test_split, GridSearchCV
+from sklearn.preprocessing import StandardScaler
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import classification_report, confusion_matrix, roc_curve, auc
+import xgboost as xgb
+import joblib
+
+# Load and inspect the dataset
+df = pd.read_csv('credit_card_transactions.csv')  # Replace with your dataset path
+print(df.head())
+
+# Basic Data Cleaning and Preprocessing
+# Check for missing values
+print(df.isnull().sum())
+
+# Fill or drop missing values (for simplicity, drop missing values)
+df = df.dropna()
+
+# Feature Engineering: Scaling numerical features
+scaler = StandardScaler()
+df[['Amount', 'Time']] = scaler.fit_transform(df[['Amount', 'Time']])
+
+# Separate features and labels
+X = df.drop(columns=['Class'])  # 'Class' is the label column indicating fraud (1) or not (0)
+y = df['Class']
+
+# Split data into training and testing sets
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
+
+# Train a Random Forest model (or you can try XGBoost)
+model = RandomForestClassifier(n_estimators=100, random_state=42)
+
+# Hyperparameter tuning using GridSearchCV (optional)
+param_grid = {
+    'n_estimators': [50, 100, 200],
+    'max_depth': [10, 20, 30],
+    'min_samples_split': [2, 5, 10]
+}
+grid_search = GridSearchCV(model, param_grid, cv=5)
+grid_search.fit(X_train, y_train)
+
+# Evaluate the best model
+best_model = grid_search.best_estimator_
+y_pred = best_model.predict(X_test)
+
+# Print classification report
+print(classification_report(y_test, y_pred))
+
+# Confusion Matrix
+cm = confusion_matrix(y_test, y_pred)
+sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', xticklabels=['Not Fraud', 'Fraud'], yticklabels=['Not Fraud', 'Fraud'])
+plt.xlabel('Predicted')
+plt.ylabel('Actual')
+plt.title('Confusion Matrix')
+plt.show()
+
+# ROC-AUC Curve
+fpr, tpr, thresholds = roc_curve(y_test, best_model.predict_proba(X_test)[:,1])
+roc_auc = auc(fpr, tpr)
+plt.figure(figsize=(8, 6))
+plt.plot(fpr, tpr, color='blue', label=f'ROC Curve (AUC = {roc_auc:.2f})')
+plt.plot([0, 1], [0, 1], color='red', linestyle='--')
+plt.xlabel('False Positive Rate')
+plt.ylabel('True Positive Rate')
+plt.title('Receiver Operating Characteristic')
+plt.legend(loc='lower right')
+plt.show()
+
+# Save the trained model to a file (for deployment)
+joblib.dump(best_model, 'credit_card_fraud_detection_model.pkl')
+
+# Load the model for prediction on new data (when deployed)
+# model = joblib.load('credit_card_fraud_detection_model.pkl')
+
+# Predict on new transaction (example)
+# new_transaction = np.array([0.1, 0.5, 1000, ...])  # example features for a new transaction
+# new_transaction_scaled = scaler.transform(new_transaction.reshape(1, -1))  # Scale the input features
+# fraud_prediction = model.predict(new_transaction_scaled)
+# print(fraud_prediction)
