@@ -1,0 +1,19 @@
+=== Classification Report ===
+              precision    recall  f1-score   support
+
+           0       0.97      0.96      0.97       144
+           1       0.96      0.97      0.97       148
+
+    accuracy                           0.97       292
+   macro avg       0.97      0.97      0.97       292
+weighted avg       0.97      0.97      0.97       292
+
+=== Confusion Matrix ===
+[[138   6]
+ [  4 144]]
+
+=== Accuracy Score ===
+0.9657
+
+=== Simulated Transaction ===
+🚨 FRAUD DETECTED: Transaction Blocked
